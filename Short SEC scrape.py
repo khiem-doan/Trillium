@@ -184,7 +184,7 @@ def bleecker():
             resp = requests.get("https://www.bleeckerstreetresearch.com/research", headers=headers)
             if resp.status_code != 200:
                 print(f"Bleecker: Received status code {resp.status_code}")
-                time.sleep(3)
+                time.sleep(5.1)
                 continue
 
             soup = BeautifulSoup(resp.content, 'html.parser')
@@ -192,14 +192,14 @@ def bleecker():
             article = soup.find('article', class_='blog-item')
             if not article:
                 print("Bleecker: Could not find 'article' with class 'blog-item'.")
-                time.sleep(3)
+                time.sleep(5.1)
                 continue
 
             # Find the 'a' tag with the link to the article
             a_tag = article.find('a', href=True)
             if not a_tag:
                 print("Bleecker: Could not find 'a' tag with href in 'article'.")
-                time.sleep(3)
+                time.sleep(5.1)
                 continue
 
             href = a_tag['href']
@@ -216,10 +216,10 @@ def bleecker():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             bleecker_headline[0] = bleecker_headline[1]
-            time.sleep(3)
+            time.sleep(5.1)
         except Exception as e:
             print("Error in bleecker():", e)
-            time.sleep(3)
+            time.sleep(5.1)
 
 
 # 4. Added Muddy Waters Function
@@ -230,7 +230,7 @@ def muddywaters():
             resp = requests.get("https://muddywatersresearch.com/research/", headers=headers)
             if resp.status_code != 200:
                 print(f"MuddyWaters: Received status code {resp.status_code}")
-                time.sleep(3)
+                time.sleep(5.1)
                 continue
 
             soup = BeautifulSoup(resp.content, 'html.parser')
@@ -238,14 +238,14 @@ def muddywaters():
             article = soup.find('div', class_='reports-table__cell reports-table__cell--title')
             if not article:
                 print("MuddyWaters: Could not find the article container.")
-                time.sleep(3)
+                time.sleep(5.1)
                 continue
 
             # Find the 'a' tag with the link to the article
             a_tag = article.find('a', href=True)
             if not a_tag:
                 print("MuddyWaters: Could not find 'a' tag with href.")
-                time.sleep(3)
+                time.sleep(5.1)
                 continue
 
             article_url = a_tag['href']
@@ -257,10 +257,10 @@ def muddywaters():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             muddywaters_headline[0] = muddywaters_headline[1]
-            time.sleep(3)
+            time.sleep(5.1)
         except Exception as e:
             print("Error in muddywaters():", e)
-            time.sleep(3)
+            time.sleep(5.1)
 
 
 # 5. Added Grizzly Research Function
@@ -414,13 +414,13 @@ def kerrisdale():
             find = soup.find('div', class_='each-post')
             if not find:
                 print("Kerrisdale: Could not find 'div' with class 'each-post'.")
-                time.sleep(3)
+                time.sleep(5.1)
                 continue
             # Extract the article URL from the onclick attribute
             a_tag = find.find('a', onclick=True)
             if not a_tag:
                 print("Kerrisdale: Could not find 'a' tag with 'onclick' attribute.")
-                time.sleep(3)
+                time.sleep(5.1)
                 continue
             onclick_text = a_tag['onclick']
             # Extract URL from onclick attribute using regex
@@ -430,7 +430,7 @@ def kerrisdale():
                 article_url = match.group(1)
             else:
                 print("Kerrisdale: Could not extract URL from onclick.")
-                time.sleep(3)
+                time.sleep(5.1)
                 continue
             # Fetch the article page to find the full report link
             article_resp = requests.get(article_url, headers={"User-Agent": "Mozilla/6.0"})
@@ -438,7 +438,7 @@ def kerrisdale():
             read_full_report_link = article_soup.find('a', class_='css3-button', text='Read Full Report')
             if not read_full_report_link:
                 print("Kerrisdale: Could not find 'a' tag for 'Read Full Report'.")
-                time.sleep(3)
+                time.sleep(5.1)
                 continue
             full_report_url = read_full_report_link['href']
             kerrisdale_headline[1] = a_tag.text.strip()
@@ -452,7 +452,7 @@ def kerrisdale():
             time.sleep(3)
         except Exception as e:
             print("Error in kerrisdale():", e)
-            time.sleep(3)
+            time.sleep(5.1)
 
 # 3. Updated Culper Function
 def culper():
@@ -558,6 +558,35 @@ def sec8k():
     import re
     import time
     import webbrowser
+    import colorama
+    from colorama import Fore, Back, Style
+    import string
+
+    colorama.init()
+
+    # Define the adjust_url function
+    def adjust_url(url):
+        # Check if the URL contains 'ix?doc='
+        if 'ix?doc=' in url:
+            # Extract the actual document URL
+            base_url = 'https://www.sec.gov'
+            doc_path = url.split('ix?doc=')[-1]
+            adjusted_url = base_url + doc_path
+            return adjusted_url
+        else:
+            return url
+
+    # Define a helper function to match keywords with flexible whitespace
+    def keyword_in_text(text, keyword):
+        # Escape special regex characters in the keyword
+        pattern = re.escape(keyword)
+        # Replace escaped spaces with \s+ to match any whitespace
+        pattern = pattern.replace(r'\ ', r'\s+')
+        # Compile the regex pattern
+        regex = re.compile(pattern, re.IGNORECASE)
+        # Search using regex
+        match = regex.search(text)
+        return match
 
     headers = {
         'Host': 'www.sec.gov',
@@ -568,7 +597,7 @@ def sec8k():
     }
 
     # List of form types to filter
-    form_type_filters = ["8-K"]
+    form_type_filters = ["8-K", "10-K", "10-Q", "144"]
 
     opened_links = set()
     script_start_time = datetime.now(timezone.utc)
@@ -582,7 +611,10 @@ def sec8k():
     red_action_keywords = ["transition", "resign", "step down", "resignation", "interim"]
 
     # Your sec_filing list
-    sec_filing = ["9.01", "5.02"]  # You can add more items like "1.01", "2.02", etc.
+    sec_filing = [
+        # "9.01"
+        "5.02","8.01"
+    ]  # You can add more items like "1.01", "2.02", etc.
 
     # Load CIK-to-Ticker mapping
     cik_ticker_mapping = load_cik_ticker_mapping()
@@ -629,32 +661,38 @@ def sec8k():
                 if updated_datetime <= script_start_time:
                     continue
 
-                # Parse the summary to extract items
-                summary = top_entry.summary
-                if summary and summary.get_text():
-                    # Clean up the summary text
-                    summary_text = summary.get_text()
-                    # Replace HTML entities and remove tags
-                    summary_text = BeautifulSoup(summary_text, 'html.parser').get_text()
-                    # Remove extra whitespace
-                    summary_text = ' '.join(summary_text.split())
+                # Initialize items_text
+                items_text = ''
 
-                    # Extract items from the summary
-                    # Items are lines that start with 'Item '
-                    items = re.findall(r'Item [\d\.]+: .*?(?=(?:Item [\d\.]+:|$))', summary_text)
-                    if not items:
-                        continue  # Skip to the next entry
+                # **Modified Section: Apply item filtering only for 8-K filings**
+                if '8-K' in form_type:
+                    # Parse the summary to extract items
+                    summary = top_entry.summary
+                    if summary and summary.get_text():
+                        # Clean up the summary text
+                        summary_text = summary.get_text()
+                        # Replace HTML entities and remove tags
+                        summary_text = BeautifulSoup(summary_text, 'html.parser').get_text()
+                        # Remove extra whitespace
+                        summary_text = ' '.join(summary_text.split())
 
-                    # Check if any of the items include any of the strings in sec_filing
-                    filing_items_found = [item for item in items if any(sec_item in item for sec_item in sec_filing)]
-                    if not filing_items_found:
-                        continue  # Skip if none of the items match
+                        # Extract items from the summary
+                        # Items are lines that start with 'Item '
+                        items = re.findall(r'Item [\d\.]+: .*?(?=(?:Item [\d\.]+:|$))', summary_text)
+                        if not items:
+                            continue  # Skip to the next entry
 
-                    # Join the matching items for output
-                    items_text = ', '.join([item.split(':')[0].replace('Item ', '') for item in filing_items_found])
-                else:
-                    # No summary available; skip this entry
-                    continue
+                        # Check if any of the items include any of the strings in sec_filing
+                        filing_items_found = [item for item in items if any(sec_item in item for sec_item in sec_filing)]
+                        if not filing_items_found:
+                            continue  # Skip if none of the items match
+
+                        # Join the matching items for output
+                        items_text = ', '.join([item.split(':')[0].replace('Item ', '') for item in filing_items_found])
+                    else:
+                        # No summary available; skip this entry
+                        continue
+                # **End of Modified Section**
 
                 # Only process if this is a new link
                 if top_link not in opened_links:
@@ -685,7 +723,7 @@ def sec8k():
                         cols = row.find_all('td')
                         if len(cols) >= 4:
                             doc_type = cols[3].text.strip()
-                            if doc_type == '8-K':
+                            if doc_type == form_type:
                                 # Find the link to the text version
                                 doc_link = None
                                 formats_cell = cols[2]
@@ -724,37 +762,45 @@ def sec8k():
                     else:
                         ticker = 'N/A'
 
-                    # Fetch the document content (Text Version)
+                    # Adjust the document URL if necessary
+                    doc_url = adjust_url(doc_url)
+
+                    # Fetch the document content
                     doc_resp = requests.get(doc_url, headers=headers)
                     if doc_resp.status_code != 200:
                         continue
-                    doc_content = doc_resp.text  # Get text content directly
+                    doc_content = doc_resp.content.decode('utf-8', errors='ignore')  # Get decoded content
 
-                    # Limit content processing to the relevant sections
-                    # Build the pattern to search for items
-                    items_pattern = '|'.join([re.escape(item) for item in sec_filing])
-                    # Adjust the regex to account for optional periods and whitespace after the item number
-                    item_pattern = re.compile(
-                        r'(Item\s+(' + items_pattern + r')\.?\s*)(.*?)(?=Item\s+\d+\.?\s+|\Z)',
-                        re.IGNORECASE | re.DOTALL
-                    )
-                    matches = item_pattern.findall(doc_content)
-                    if matches:
-                        # Combine the matched content
-                        text_content = ' '.join([match[0] + match[2] for match in matches]).lower()
-                    else:
-                        # If no matches, fallback to processing the whole document
-                        text_content = doc_content.lower()
+                    # Remove namespaces
+                    doc_content = re.sub(r'\sxmlns(:\w+)?="[^"]+"', '', doc_content)  # Remove namespace declarations
+                    doc_content = re.sub(r'</?(\w+):', '<', doc_content)  # Remove namespace prefixes
+
+                    # Parse with BeautifulSoup using 'lxml' parser
+                    soup = BeautifulSoup(doc_content, 'lxml')
+
+                    # Remove script and style elements
+                    for script_or_style in soup(['script', 'style']):
+                        script_or_style.decompose()
+
+                    # Extract text
+                    text = soup.get_text(separator=' ', strip=True)
+
+                    # Remove non-printable characters
+                    text = ''.join(filter(lambda x: x in string.printable, text))
 
                     # Clean up the text content
-                    text_content = re.sub(r'\s+', ' ', text_content)  # Replace multiple whitespace with single space
+                    text = re.sub(r'\s+', ' ', text)  # Replace multiple whitespace with single space
 
-                    # Search for keywords
-                    red_position_found = any(keyword in text_content for keyword in red_position_keywords)
-                    red_action_found = any(keyword in text_content for keyword in red_action_keywords)
-                    red_found = red_position_found and red_action_found
-                    green_found = any(keyword in text_content for keyword in green_keywords)
-                    orange_found = any(keyword in text_content for keyword in orange_keywords)
+                    # Convert to lowercase for case-insensitive searching
+                    text_lower = text.lower()
+
+                    # Search for keywords using the helper function
+                    red_position_found = any(keyword_in_text(text_lower, keyword) for keyword in red_position_keywords)
+                    red_action_found = any(keyword_in_text(text_lower, keyword) for keyword in red_action_keywords)
+                    red_found = red_position_found and red_action_found  # Both must be true for red_found to be true
+
+                    green_found = any(keyword_in_text(text_lower, keyword) for keyword in green_keywords)
+                    orange_found = any(keyword_in_text(text_lower, keyword) for keyword in orange_keywords)
 
                     # Format the output
                     output = (f"{form_type_extracted} - Item {items_text} - {ticker} - {company_name} - "
@@ -763,24 +809,24 @@ def sec8k():
                               f"Delay: {int(time_diff_seconds)}s - {doc_url}")
 
                     # Determine the color code based on the highest priority keyword found
-                    if red_found:
-                        color_code = '\033[31m'  # Red
+                    if orange_found:
+                        color_code = Fore.BLACK + Back.YELLOW  # Highlight with yellow background
+                    elif red_found:
+                        color_code = Fore.WHITE + Back.RED     # Highlight with red background
                     elif green_found:
-                        color_code = '\033[32m'  # Green
-                    elif orange_found:
-                        color_code = '\033[33m'  # Orange/Yellow
+                        color_code = Fore.BLACK + Back.GREEN   # Highlight with green background
                     else:
-                        color_code = None  # No color
+                        color_code = ''  # No color
 
-                    # Print the output with the corresponding color
+                    # Print the output with the corresponding colors
                     if color_code:
-                        print(f"{color_code}{output}\033[0m")
+                        print(f"{color_code}{output}{Style.RESET_ALL}")
                     else:
                         print(output)
 
                     # Open the document in the browser
                     webbrowser.open_new_tab(doc_url)
-                    # winsound.Beep(2500, 200)
+                    # winsound.Beep(2500, 200)  # Uncomment if you want a beep sound (requires 'winsound' module on Windows)
                     opened_links.add(top_link)
                     break  # Found the document we're interested in
 
@@ -790,6 +836,7 @@ def sec8k():
             print(f"Error in sec8k(): {e}")
             traceback.print_exc()
             time.sleep(3)
+
 
 
 def load_cik_ticker_mapping():
@@ -953,12 +1000,12 @@ def wolfpack():
             find = soup.find('div', class_='comp-ls2evfpq')
             if not find:
                 print("Wolfpack: Could not find 'div' with class 'comp-ls2evfpq'.")
-                time.sleep(2)
+                time.sleep(5.1)
                 continue
             find_link = find.find('a', href=True)
             if not find_link:
                 print("Wolfpack: Could not find 'a' tag with href.")
-                time.sleep(2)
+                time.sleep(5.1)
                 continue
             article_url = find_link['href']
             if not article_url.startswith('http'):
@@ -971,10 +1018,10 @@ def wolfpack():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             wolfpack_headline[0] = wolfpack_headline[1]
-            time.sleep(2)
+            time.sleep(5.1)
         except Exception as e:
             print("Error in wolfpack():", e)
-            time.sleep(2)
+            time.sleep(5.1)
 
 
 
