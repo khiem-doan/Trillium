@@ -561,7 +561,13 @@ def sec8k():
     import colorama
     from colorama import Fore, Back, Style
     import string
+    from bs4 import XMLParsedAsHTMLWarning
+    import warnings
 
+    warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+
+
+    # soup = BeautifulSoup(doc_content, 'lxml')
     colorama.init()
 
     # Define the adjust_url function
@@ -604,7 +610,7 @@ def sec8k():
     first_run = True  # Flag variable
 
     # Keywords to search for (ensure all are in lowercase)
-    orange_keywords = ["offering"]
+    orange_keywords = ["notification of late filing", "late filing"]
     green_keywords = ["acquisition", "merger"]
     # Split red keywords into two lists
     red_position_keywords = ["chief executive officer", "chief financial officer"]
@@ -612,8 +618,7 @@ def sec8k():
 
     # Your sec_filing list
     sec_filing = [
-        # "9.01"
-        "5.02","8.01"
+        "5.02", "8.01"
     ]  # You can add more items like "1.01", "2.02", etc.
 
     # Load CIK-to-Ticker mapping
@@ -683,7 +688,8 @@ def sec8k():
                             continue  # Skip to the next entry
 
                         # Check if any of the items include any of the strings in sec_filing
-                        filing_items_found = [item for item in items if any(sec_item in item for sec_item in sec_filing)]
+                        filing_items_found = [item for item in items if
+                                              any(sec_item in item for sec_item in sec_filing)]
                         if not filing_items_found:
                             continue  # Skip if none of the items match
 
@@ -803,24 +809,32 @@ def sec8k():
                     orange_found = any(keyword_in_text(text_lower, keyword) for keyword in orange_keywords)
 
                     # Format the output
-                    output = (f"{form_type_extracted} - Item {items_text} - {ticker} - {company_name} - "
+                    # Emphasize the ticker
+                    ticker_formatted = f"{Style.BRIGHT}{ticker}{Style.RESET_ALL}"
+                    # Create the main output with visual markers
+                    output = (f"=== TICKER: {ticker_formatted} - {form_type_extracted} - Item {items_text} ===\n"
+                              f"Company: {company_name}\n"
                               f"SEC Time: {updated_datetime_est.strftime('%Y-%m-%d %H:%M:%S %Z')} - "
                               f"Print Time: {print_timestamp_est.strftime('%Y-%m-%d %H:%M:%S %Z')} - "
-                              f"Delay: {int(time_diff_seconds)}s - {doc_url}")
+                              f"Delay: {int(time_diff_seconds)}s\n"
+                              f"URL: {doc_url}")
 
                     # Determine the color code based on the highest priority keyword found
                     if orange_found:
-                        color_code = Fore.BLACK + Back.YELLOW  # Highlight with yellow background
+                        color_code = Back.YELLOW + Fore.BLACK  # Yellow background, black text
                     elif red_found:
-                        color_code = Fore.WHITE + Back.RED     # Highlight with red background
+                        color_code = Back.RED + Fore.BLACK  # Red background, black text
                     elif green_found:
-                        color_code = Fore.BLACK + Back.GREEN   # Highlight with green background
+                        color_code = Back.GREEN + Fore.BLACK  # Green background, black text
                     else:
                         color_code = ''  # No color
 
+                    # Apply bold to the entire output
+                    output = Style.BRIGHT + output + Style.RESET_ALL
+
                     # Print the output with the corresponding colors
                     if color_code:
-                        print(f"{color_code}{output}{Style.RESET_ALL}")
+                        print(f"{color_code}{output}")
                     else:
                         print(output)
 
@@ -838,7 +852,6 @@ def sec8k():
             time.sleep(3)
 
 
-
 def load_cik_ticker_mapping():
     import requests
     cik_ticker = {}
@@ -846,7 +859,7 @@ def load_cik_ticker_mapping():
         # Download the CIK-Ticker mapping file from the SEC website
         url = 'https://www.sec.gov/files/company_tickers_exchange.json'
         headers = {
-            'User-Agent': 'Your Name; your.email@example.com',
+            'User-Agent': 'Your Name; your.email@example.com',  # Replace with your actual name and email
             'Accept-Encoding': 'gzip, deflate',
             'Host': 'www.sec.gov'
         }
@@ -856,17 +869,21 @@ def load_cik_ticker_mapping():
             fields = data['fields']
             cik_idx = fields.index('cik')
             ticker_idx = fields.index('ticker')
+            exchange_idx = fields.index('exchange')  # Get the index of the 'exchange' field
             for entry in data['data']:
-                cik = str(entry[cik_idx]).strip()
-                cik = cik.lstrip('0')  # Remove leading zeros
-                ticker = entry[ticker_idx].strip()
-                cik_ticker[cik] = ticker
+                exchange = entry[exchange_idx].strip()
+                if exchange in ['Nasdaq', 'NYSE']:
+                    cik = str(entry[cik_idx]).strip()
+                    cik = cik.lstrip('0')  # Remove leading zeros
+                    ticker = entry[ticker_idx].strip()
+                    cik_ticker[cik] = ticker
         else:
             print(f"Failed to download CIK-Ticker mapping. Status code: {resp.status_code}")
     except Exception as e:
         print(f"Error loading CIK-Ticker mapping: {e}")
 
     return cik_ticker
+
 
 
 # def citron():
