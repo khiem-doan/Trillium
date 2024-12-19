@@ -53,6 +53,7 @@ bleecker_headline = [0]*2
 muddywaters_headline = [0]*2
 grizzly_headline = [0]*2
 fuzzypanda_headline = [0]*2
+tiktok_headline = [0]*2
 
 
 author = ""
@@ -72,7 +73,7 @@ def jcapital():
             resp = requests.get(url, headers=headers)
             if resp.status_code != 200:
                 print(f"J Capital: Received status code {resp.status_code}")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             soup = BeautifulSoup(resp.content, 'html.parser')
@@ -81,14 +82,14 @@ def jcapital():
             paragraph_div = soup.find('div', class_='paragraph')
             if not paragraph_div:
                 print("J Capital: Could not find 'div' with class 'paragraph'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             # Find the first <a> tag within this div
             a_tag = paragraph_div.find('a', href=True)
             if not a_tag:
                 print("J Capital: Could not find 'a' tag with href.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             article_url = a_tag['href']
@@ -103,12 +104,12 @@ def jcapital():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             jcapital_headline[0] = jcapital_headline[1]
-            time.sleep(3)
+            time.sleep(3.03)
         except Exception as e:
             import traceback
             print(f"Error in jcapital(): {e}")
             traceback.print_exc()
-            time.sleep(3)
+            time.sleep(3.03)
 # Initialize headline tracking list for Capybara
 capybara_headline = [0]*2
 
@@ -122,7 +123,7 @@ def capybara():
             resp = requests.get(url, headers=headers)
             if resp.status_code != 200:
                 print(f"Capybara: Received status code {resp.status_code}")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             soup = BeautifulSoup(resp.content, 'html.parser')
@@ -131,21 +132,21 @@ def capybara():
             article_div = soup.find('div', class_='relative w-100 mb4')
             if not article_div:
                 print("Capybara: Could not find 'div' with class 'relative w-100 mb4'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             # Find the text content div
             text_div = article_div.find('div', class_='blah w-100 w-60-ns pl3-ns')
             if not text_div:
                 print("Capybara: Could not find 'div' with class 'blah w-100 w-60-ns pl3-ns'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             # Find the <a> tag within the text content div
             a_tag = text_div.find('a', href=True)
             if not a_tag:
                 print("Capybara: Could not find 'a' tag with href in text content.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             article_url = a_tag['href']
@@ -156,7 +157,7 @@ def capybara():
             h1_tags = a_tag.find_all('h1')
             if not h1_tags:
                 print("Capybara: Could not find 'h1' tags within 'a' tag.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             # Combine the text from both h1 tags
@@ -168,12 +169,12 @@ def capybara():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             capybara_headline[0] = capybara_headline[1]
-            time.sleep(3)
+            time.sleep(3.03)
         except Exception as e:
             import traceback
             print(f"Error in capybara(): {e}")
             traceback.print_exc()
-            time.sleep(3)
+            time.sleep(3.03)
 
 
 # 3. Added Bleecker Street Function
@@ -278,7 +279,7 @@ def grizzly():
             resp = requests.get(url, headers=headers)
             if resp.status_code != 200:
                 print(f"Grizzly: Received status code {resp.status_code}")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             soup = BeautifulSoup(resp.content, 'html.parser')
@@ -287,21 +288,21 @@ def grizzly():
             div_post_head = soup.find('div', class_='post__head')
             if not div_post_head:
                 print("Grizzly: Could not find 'div' with class 'post__head'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             # Find the 'h3' tag with class 'post__title typescale-2' inside 'div_post_head'
             h3_title = div_post_head.find('h3', class_='post__title typescale-2')
             if not h3_title:
                 print("Grizzly: Could not find 'h3' with class 'post__title typescale-2'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             # Find the 'a' tag inside the 'h3' tag
             a_tag = h3_title.find('a', href=True)
             if not a_tag:
                 print("Grizzly: Could not find 'a' tag with href in 'h3'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             article_url = a_tag['href']
@@ -314,10 +315,10 @@ def grizzly():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             grizzly_headline[0] = grizzly_headline[1]
-            time.sleep(3)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in grizzly():", e)
-            time.sleep(3)
+            time.sleep(3.03)
 
 # 6. Added Fuzzy Panda Function
 def fuzzypanda():
@@ -327,7 +328,7 @@ def fuzzypanda():
             resp = requests.get("https://fuzzypandaresearch.com/", headers=headers)
             if resp.status_code != 200:
                 print(f"FuzzyPanda: Received status code {resp.status_code}")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             soup = BeautifulSoup(resp.content, 'html.parser')
@@ -336,21 +337,21 @@ def fuzzypanda():
             article = soup.find('div', class_=lambda x: x and x.startswith('post-'))
             if not article:
                 print("FuzzyPanda: Could not find 'div' tag with class starting with 'post-'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             # Find the 'h2' tag with class 'entry-title' inside the article
             h2_tag = article.find('h2', class_='entry-title')
             if not h2_tag:
                 print("FuzzyPanda: Could not find 'h2' tag with class 'entry-title'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             # Find the 'a' tag inside the h2 tag
             a_tag = h2_tag.find('a', href=True)
             if not a_tag:
                 print("FuzzyPanda: Could not find 'a' tag with href in 'h2'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             article_url = a_tag['href']
@@ -362,10 +363,10 @@ def fuzzypanda():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             fuzzypanda_headline[0] = fuzzypanda_headline[1]
-            time.sleep(3)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in fuzzypanda():", e)
-            time.sleep(3)
+            time.sleep(3.03)
 
 def scorpion():
     while True:
@@ -376,7 +377,7 @@ def scorpion():
             p_tags = soup.find_all('p', class_='sqsrte-small')
             if not p_tags:
                 print("Scorpion: Could not find 'p' tags with class 'sqsrte-small'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
             pdf_links = []
             for p_tag in p_tags:
@@ -385,7 +386,7 @@ def scorpion():
                     pdf_links.append(a_tag['href'])
             if not pdf_links:
                 print("Scorpion: Could not find any PDF links.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
             # Use the first PDF link
             article_url = pdf_links[0]
@@ -399,10 +400,10 @@ def scorpion():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             scorpion_headline[0] = scorpion_headline[1]
-            time.sleep(3)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in scorpion():", e)
-            time.sleep(3)
+            time.sleep(3.03)
 
 # 2. Updated Kerrisdale Function
 def kerrisdale():
@@ -414,13 +415,13 @@ def kerrisdale():
             find = soup.find('div', class_='each-post')
             if not find:
                 print("Kerrisdale: Could not find 'div' with class 'each-post'.")
-                time.sleep(5.1)
+                time.sleep(7.6)
                 continue
             # Extract the article URL from the onclick attribute
             a_tag = find.find('a', onclick=True)
             if not a_tag:
                 print("Kerrisdale: Could not find 'a' tag with 'onclick' attribute.")
-                time.sleep(5.1)
+                time.sleep(7.6)
                 continue
             onclick_text = a_tag['onclick']
             # Extract URL from onclick attribute using regex
@@ -430,7 +431,7 @@ def kerrisdale():
                 article_url = match.group(1)
             else:
                 print("Kerrisdale: Could not extract URL from onclick.")
-                time.sleep(5.1)
+                time.sleep(7.6)
                 continue
             # Fetch the article page to find the full report link
             article_resp = requests.get(article_url, headers={"User-Agent": "Mozilla/6.0"})
@@ -438,7 +439,7 @@ def kerrisdale():
             read_full_report_link = article_soup.find('a', class_='css3-button', text='Read Full Report')
             if not read_full_report_link:
                 print("Kerrisdale: Could not find 'a' tag for 'Read Full Report'.")
-                time.sleep(5.1)
+                time.sleep(6.1)
                 continue
             full_report_url = read_full_report_link['href']
             kerrisdale_headline[1] = a_tag.text.strip()
@@ -449,10 +450,10 @@ def kerrisdale():
                 webbrowser.open_new_tab(full_report_url)
                 winsound.Beep(2500, 200)
             kerrisdale_headline[0] = kerrisdale_headline[1]
-            time.sleep(3)
+            time.sleep(7.6)
         except Exception as e:
             print("Error in kerrisdale():", e)
-            time.sleep(5.1)
+            time.sleep(7.6)
 
 # 3. Updated Culper Function
 def culper():
@@ -468,7 +469,7 @@ def culper():
             resp = requests.get(url, headers=headers)
             if resp.status_code != 200:
                 print(f"Culper: Received status code {resp.status_code}")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             soup = BeautifulSoup(resp.content, 'html.parser')
@@ -477,7 +478,7 @@ def culper():
             a_tag = soup.find('a', attrs={'data-aid': 'DOWNLOAD_DOCUMENT_LINK_WRAPPER_RENDERED'}, href=True)
             if not a_tag:
                 print("Culper: Could not find the latest report link.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             article_url = a_tag['href']
@@ -491,7 +492,7 @@ def culper():
             span_tag = a_tag.find('span', attrs={'data-ux': 'Element'})
             if not span_tag:
                 print("Culper: Could not find the headline.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
 
             culper_headline[1] = span_tag.get_text(strip=True)
@@ -502,12 +503,12 @@ def culper():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             culper_headline[0] = culper_headline[1]
-            time.sleep(3)
+            time.sleep(3.03)
         except Exception as e:
             import traceback
             print(f"Error in culper(): {e}")
             traceback.print_exc()
-            time.sleep(3)
+            time.sleep(3.03)
 
 
 # 4. Updated Spruce Function
@@ -520,13 +521,13 @@ def spruce():
             find = soup.find('div', class_='research-list-wrap')
             if not find:
                 print("Spruce: Could not find 'div' with class 'research-list-wrap'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
             # Find the 'a' tag within this div
             find_link = find.find('a', href=True)
             if not find_link:
                 print("Spruce: Could not find 'a' tag with href.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
             href = find_link['href']
             article_url = 'https://www.sprucepointcap.com' + href
@@ -534,7 +535,7 @@ def spruce():
             title_tag = find_link.find('h3', class_='research-h3')
             if not title_tag:
                 print("Spruce: Could not find 'h3' tag with class 'research-h3'.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
             spruce_headline[1] = title_tag.text.strip()
             now = datetime.now().time()
@@ -544,10 +545,10 @@ def spruce():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             spruce_headline[0] = spruce_headline[1]
-            time.sleep(3)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in spruce():", e)
-            time.sleep(3)
+            time.sleep(3.03)
 
 # 5. Updated SEC8k Function with Form Type Filter
 def sec8k():
@@ -566,9 +567,7 @@ def sec8k():
 
     warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
-
-    # soup = BeautifulSoup(doc_content, 'lxml')
-    colorama.init()
+    colorama.init(autoreset=True)
 
     # Define the adjust_url function
     def adjust_url(url):
@@ -597,7 +596,7 @@ def sec8k():
     headers = {
         'Host': 'www.sec.gov',
         'User-Agent': 'Your Name; your.email@example.com',  # Replace with your actual name and email
-        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Encoding': 'gzip, deflate',
         'Accept-Language': 'en-US,en;q=0.9',
         'Connection': 'keep-alive',
     }
@@ -607,6 +606,7 @@ def sec8k():
 
     opened_links = set()
     script_start_time = datetime.now(timezone.utc)
+    last_processed_time = script_start_time  # Initialize last_processed_time
     first_run = True  # Flag variable
 
     # Keywords to search for (ensure all are in lowercase)
@@ -626,19 +626,20 @@ def sec8k():
 
     while True:
         try:
+            # Fetch and parse the SEC feed
             url = ("https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&CIK=&type=8-K&company="
                    "&dateb=&owner=include&start=0&count=40&output=atom")
             resp = requests.get(url, headers=headers)
             if resp.status_code != 200:
                 print(f"SEC 8K: Error fetching RSS feed: {resp.status_code} {resp.reason}")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
             feed_content = resp.content
             soup = BeautifulSoup(feed_content, 'xml')  # Use 'xml' parser
             entries = soup.find_all('entry')
             if not entries:
                 print("SEC 8K: No entries found in the feed.")
-                time.sleep(3)
+                time.sleep(3.03)
                 continue
             else:
                 if first_run:
@@ -662,8 +663,9 @@ def sec8k():
                 updated_datetime_str = top_entry.updated.get_text()
                 updated_datetime = datetime.strptime(updated_datetime_str, '%Y-%m-%dT%H:%M:%S%z')
 
-                # Skip filings older than the script start time
-                if updated_datetime <= script_start_time:
+                # **Modified Time Check**
+                # Skip filings older than the last processed time
+                if updated_datetime <= last_processed_time:
                     continue
 
                 # Initialize items_text
@@ -712,15 +714,41 @@ def sec8k():
                     updated_datetime_est = updated_datetime.astimezone(ZoneInfo('America/New_York'))
                     print_timestamp_est = print_timestamp.astimezone(ZoneInfo('America/New_York'))
 
-                    # Fetching page content
+                    # Extract company name and CIK from RSS feed
+                    title_text = top_entry.title.get_text()
+                    # Example title format: "8-K - Company Name (0001234567) (Filer)"
+                    title_pattern = re.compile(r'^(.*?)\s*-\s*(.*?)\s*\((\d+)\)\s*\(Filer\)$')
+                    match = title_pattern.match(title_text)
+                    if match:
+                        form_type_extracted = match.group(1).strip()
+                        company_name = match.group(2).strip()
+                        cik_number = match.group(3).strip().lstrip('0')  # Remove leading zeros
+                    else:
+                        # If the title does not match the expected pattern
+                        company_name = "Unknown Company"
+                        cik_number = None
+                        form_type_extracted = "Unknown Form"
+
+                    # **Add this check to skip companies not in the mapping**
+                    if cik_number not in cik_ticker_mapping:
+                        # **Update last_processed_time even if skipping**
+                        last_processed_time = max(last_processed_time, updated_datetime)
+                        continue  # Skip this filing
+
+                    # Get ticker symbol from the preloaded mapping
+                    ticker = cik_ticker_mapping[cik_number]
+
+                    # Fetching page content to get the document URL
                     page_resp = requests.get(top_link, headers=headers)
                     if page_resp.status_code != 200:
+                        last_processed_time = max(last_processed_time, updated_datetime)
                         continue
                     page_soup = BeautifulSoup(page_resp.content, 'lxml')  # Use 'lxml' parser
 
                     # Find the document table
                     table = page_soup.find('table', class_='tableFile')
                     if not table:
+                        last_processed_time = max(last_processed_time, updated_datetime)
                         continue
                     # Find the row with the text version of the desired document
                     rows = table.find_all('tr')
@@ -745,28 +773,8 @@ def sec8k():
                                 break  # Exit after finding the document
 
                     if not doc_url:
+                        last_processed_time = max(last_processed_time, updated_datetime)
                         continue  # Skip if we couldn't find the document URL
-
-                    # Extract company name and CIK from RSS feed
-                    title_text = top_entry.title.get_text()
-                    # Example title format: "8-K - Company Name (0001234567) (Filer)"
-                    title_pattern = re.compile(r'^(.*?)\s*-\s*(.*?)\s*\((\d+)\)\s*\(Filer\)$')
-                    match = title_pattern.match(title_text)
-                    if match:
-                        form_type_extracted = match.group(1).strip()
-                        company_name = match.group(2).strip()
-                        cik_number = match.group(3).strip().lstrip('0')  # Remove leading zeros
-                    else:
-                        # If the title does not match the expected pattern
-                        company_name = "Unknown Company"
-                        cik_number = None
-                        form_type_extracted = "Unknown Form"
-
-                    # Get ticker symbol from the preloaded mapping
-                    if cik_number and cik_number in cik_ticker_mapping:
-                        ticker = cik_ticker_mapping[cik_number]
-                    else:
-                        ticker = 'N/A'
 
                     # Adjust the document URL if necessary
                     doc_url = adjust_url(doc_url)
@@ -774,6 +782,7 @@ def sec8k():
                     # Fetch the document content
                     doc_resp = requests.get(doc_url, headers=headers)
                     if doc_resp.status_code != 200:
+                        last_processed_time = max(last_processed_time, updated_datetime)
                         continue
                     doc_content = doc_resp.content.decode('utf-8', errors='ignore')  # Get decoded content
 
@@ -808,9 +817,9 @@ def sec8k():
                     green_found = any(keyword_in_text(text_lower, keyword) for keyword in green_keywords)
                     orange_found = any(keyword_in_text(text_lower, keyword) for keyword in orange_keywords)
 
-                    # Format the output
                     # Emphasize the ticker
                     ticker_formatted = f"{Style.BRIGHT}{ticker}{Style.RESET_ALL}"
+
                     # Create the main output with visual markers
                     output = (f"=== TICKER: {ticker_formatted} - {form_type_extracted} - Item {items_text} ===\n"
                               f"Company: {company_name}\n"
@@ -842,14 +851,23 @@ def sec8k():
                     webbrowser.open_new_tab(doc_url)
                     # winsound.Beep(2500, 200)  # Uncomment if you want a beep sound (requires 'winsound' module on Windows)
                     opened_links.add(top_link)
+
+                    # **Update last_processed_time after processing**
+                    last_processed_time = max(last_processed_time, updated_datetime)
+
                     break  # Found the document we're interested in
+                else:
+                    # **Update last_processed_time even if link was already opened**
+                    last_processed_time = max(last_processed_time, updated_datetime)
+                    continue
 
             time.sleep(1)  # Reduced sleep time to 1 second
+
         except Exception as e:
             import traceback
             print(f"Error in sec8k(): {e}")
             traceback.print_exc()
-            time.sleep(3)
+            time.sleep(3.03)
 
 
 def load_cik_ticker_mapping():
@@ -871,12 +889,23 @@ def load_cik_ticker_mapping():
             ticker_idx = fields.index('ticker')
             exchange_idx = fields.index('exchange')  # Get the index of the 'exchange' field
             for entry in data['data']:
-                exchange = entry[exchange_idx].strip()
-                if exchange in ['Nasdaq', 'NYSE']:
-                    cik = str(entry[cik_idx]).strip()
-                    cik = cik.lstrip('0')  # Remove leading zeros
-                    ticker = entry[ticker_idx].strip()
-                    cik_ticker[cik] = ticker
+                exchange_field = entry[exchange_idx]
+                if exchange_field:
+                    exchange = exchange_field.strip()
+                    if exchange in ['Nasdaq', 'NYSE']:
+                        cik_field = entry[cik_idx]
+                        ticker_field = entry[ticker_idx]
+                        if cik_field and ticker_field:
+                            cik = str(cik_field).strip()
+                            cik = cik.lstrip('0')  # Remove leading zeros
+                            ticker = ticker_field.strip()
+                            cik_ticker[cik] = ticker
+                        else:
+                            # Skip entries with missing CIK or ticker
+                            continue
+                else:
+                    # Skip entries where exchange is None or empty
+                    continue
         else:
             print(f"Failed to download CIK-Ticker mapping. Status code: {resp.status_code}")
     except Exception as e:
@@ -884,6 +913,121 @@ def load_cik_ticker_mapping():
 
     return cik_ticker
 
+
+
+
+def tiktok_court():
+    import requests
+    from bs4 import BeautifulSoup
+    from datetime import datetime, timezone
+    import re
+    import time
+    import webbrowser
+    import colorama
+    from colorama import Fore, Back, Style
+    import string
+    from bs4 import XMLParsedAsHTMLWarning
+    import warnings
+
+    warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
+
+    colorama.init(autoreset=True)
+
+    # RSS feed for TikTok Inc. v. Merrick Garland
+    feed_url = "https://www.courtlistener.com/docket/68506893/feed/"
+
+    # Headers for the request
+    headers = {
+        'User-Agent': 'Your Name; your.email@example.com',  # Replace with your actual name and email
+        'Accept-Encoding': 'gzip, deflate',
+        'Connection': 'keep-alive',
+    }
+
+    # Track the last processed time so we don't re-process old entries
+    last_processed_time = datetime.now(timezone.utc)
+
+    # Helper function to parse published time
+    def parse_published_time(dt_str):
+        # Example: 2024-09-27T00:00:00-07:00
+        # Use %z to parse the timezone offset
+        return datetime.strptime(dt_str, "%Y-%m-%dT%H:%M:%S%z")
+
+    while True:
+        try:
+            # Fetch the RSS feed
+            resp = requests.get(feed_url, headers=headers)
+            if resp.status_code != 200:
+                print(f"TiKTok Court: Error fetching feed: {resp.status_code} {resp.reason}")
+                time.sleep(5)
+                continue
+
+            feed_content = resp.content
+            soup = BeautifulSoup(feed_content, 'xml')  # Parse as XML
+            entries = soup.find_all('entry')
+            if not entries:
+                # No entries found
+                time.sleep(5)
+                continue
+
+            # Process each entry
+            # We'll sort entries by published time just in case
+            # (Atom feeds usually sorted by updated time, but we'll be careful)
+            # Extract (entry, published_datetime) pairs
+            entry_times = []
+            for e in entries:
+                pub_str = e.find('published').get_text()
+                pub_dt = parse_published_time(pub_str)
+                entry_times.append((e, pub_dt))
+            # Sort by published time ascending
+            entry_times.sort(key=lambda x: x[1])
+
+            # Now iterate through sorted entries, only print those newer than last_processed_time
+            for entry, pub_dt in entry_times:
+                if pub_dt <= last_processed_time:
+                    # Already processed or old entry
+                    continue
+
+                # This is a new entry
+                title = entry.find('title').get_text(strip=True)
+                link_tag = entry.find('link', {'rel': 'alternate'})
+                entry_url = link_tag['href'] if link_tag else None
+                summary_tag = entry.find('summary')
+                summary_text = summary_tag.get_text(" ", strip=True) if summary_tag else ""
+
+                # Remove non-printable characters
+                summary_text = ''.join(filter(lambda x: x in string.printable, summary_text))
+                # Clean up whitespace in summary
+                summary_text = re.sub(r'\s+', ' ', summary_text)
+
+                # Highlight the entry
+                # We'll just use yellow background as we did for orange in sec8k
+                color_code = Back.YELLOW + Fore.BLACK
+                output = (f"=== NEW COURT ENTRY ===\n"
+                          f"Title: {title}\n"
+                          f"Published: {pub_dt.strftime('%Y-%m-%d %H:%M:%S %Z')}\n"
+                          f"Summary: {summary_text}\n"
+                          f"URL: {entry_url}")
+                output = Style.BRIGHT + output + Style.RESET_ALL
+
+                if color_code:
+                    print(f"{color_code}{output}")
+                else:
+                    print(output)
+
+                # Open the link if available
+                if entry_url:
+                    webbrowser.open_new_tab(entry_url)
+
+                # Update last_processed_time to this entry's time
+                last_processed_time = max(last_processed_time, pub_dt)
+
+            # Sleep before checking again
+            time.sleep(10)
+        except Exception as e:
+            import traceback
+            print(f"Error in tiktok_court(): {e}")
+            traceback.print_exc()
+            time.sleep(5)
 
 
 # def citron():
@@ -894,17 +1038,17 @@ def load_cik_ticker_mapping():
 #             find = soup.find(class_="avia_textblock")
 #             if not find:
 #                 print("Citron: Could not find 'avia_textblock' class.")
-#                 time.sleep(2)
+#                 time.sleep(3.03)
 #                 continue
 #             find2 = find.find("h2")
 #             if not find2:
 #                 print("Citron: Could not find 'h2' tag.")
-#                 time.sleep(2)
+#                 time.sleep(3.03)
 #                 continue
 #             find_link = find2.find("a", href=True)
 #             if not find_link:
 #                 print("Citron: Could not find 'a' tag with href in 'h2'.")
-#                 time.sleep(2)
+#                 time.sleep(3.03)
 #                 continue
 #             citron_headline[1] = find_link.text.strip()
 #             article_url = find_link['href']
@@ -917,10 +1061,10 @@ def load_cik_ticker_mapping():
 #                 webbrowser.open_new_tab(article_url)
 #                 winsound.Beep(2500, 200)
 #             citron_headline[0] = citron_headline[1]
-#             time.sleep(2)
+#             time.sleep(3.03)
 #         except Exception as e:
 #             print("Error in citron():", e)
-#             time.sleep(2)
+#             time.sleep(3.03)
 
 
 
@@ -932,12 +1076,12 @@ def iceberg():
             find = soup.find('div', class_='xpro-post-grid-content')
             if not find:
                 print("Iceberg: Could not find 'div' with class 'xpro-post-grid-content'.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             find_link = find.find('a', href=True)
             if not find_link:
                 print("Iceberg: Could not find 'a' tag with href in the post content.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             article_url = find_link['href']
             iceberg_headline[1] = find_link.find('h2', class_='xpro-post-grid-title').text.strip()
@@ -948,10 +1092,10 @@ def iceberg():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             iceberg_headline[0] = iceberg_headline[1]
-            time.sleep(2)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in iceberg():", e)
-            time.sleep(2)
+            time.sleep(3.03)
 
 def statnews():
     while True:
@@ -961,7 +1105,7 @@ def statnews():
             find = soup.find("item")
             if not find:
                 print("Statnews: Could not find 'item' tag.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             statnews_headline[1] = find.title.text.strip()
             link = find.link.text.strip()
@@ -972,10 +1116,10 @@ def statnews():
                 webbrowser.open_new_tab(link)
                 winsound.Beep(2500, 200)
             statnews_headline[0] = statnews_headline[1]
-            time.sleep(2)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in statnews():", e)
-            time.sleep(2)
+            time.sleep(3.03)
 
 def hindenburg():
     while True:
@@ -985,12 +1129,12 @@ def hindenburg():
             find = soup.find("h1")
             if not find:
                 print("Hindenburg: Could not find the h1 tag.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             find2 = find.find("a", href=True)
             if not find2:
                 print("Hindenburg: Could not find the a tag within h1.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             hindenburg_headline[1] = find2.text.strip()
             article_url = find2['href']
@@ -1003,10 +1147,10 @@ def hindenburg():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             hindenburg_headline[0] = hindenburg_headline[1]
-            time.sleep(2)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in hindenburg():", e)
-            time.sleep(2)
+            time.sleep(3.03)
 
 def wolfpack():
     while True:
@@ -1054,7 +1198,7 @@ def usps():
             find = soup.find("item")
             if not find:
                 print("USPS: Could not find 'item' tag.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             usps_headline[1] = find.title.text.strip()
             link = find.link.text.strip()
@@ -1065,10 +1209,10 @@ def usps():
                 webbrowser.open_new_tab(link)
                 winsound.Beep(2500, 200)
             usps_headline[0] = usps_headline[1]
-            time.sleep(2)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in usps():", e)
-            time.sleep(2)
+            time.sleep(3.03)
 
 def cdc():
     while True:
@@ -1078,7 +1222,7 @@ def cdc():
             find = soup.find("item")
             if not find:
                 print("CDC: Could not find 'item' tag.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             cdc_headline[1] = find.title.text.strip()
             link = find.link.text.strip()
@@ -1089,10 +1233,10 @@ def cdc():
                 webbrowser.open_new_tab(link)
                 winsound.Beep(2500, 200)
             cdc_headline[0] = cdc_headline[1]
-            time.sleep(2)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in cdc():", e)
-            time.sleep(2)
+            time.sleep(3.03)
 
 def fda():
     while True:
@@ -1104,23 +1248,23 @@ def fda():
             find = soup.find("tbody")
             if not find:
                 print("FDA: Could not find 'tbody' tag.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             find2 = find.find("tr")
             if not find2:
                 print("FDA: Could not find 'tr' tag within 'tbody'.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             find3 = find2.find("td")
             if not find3:
                 print("FDA: Could not find 'td' tag within 'tr'.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             fda_headline[1] = find3.text.strip()
             link_tag = find2.find("a", href=True)
             if not link_tag:
                 print("FDA: Could not find 'a' tag with href.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             article_url = "https://www.fda.gov" + link_tag['href']
             now = datetime.now().time()
@@ -1130,10 +1274,10 @@ def fda():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             fda_headline[0] = fda_headline[1]
-            time.sleep(2)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in fda():", e)
-            time.sleep(2)
+            time.sleep(3.03)
 
 def fda2():
     while True:
@@ -1145,13 +1289,13 @@ def fda2():
             find = soup.find(class_="title")
             if not find:
                 print("FDA2: Could not find 'title' class.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             fda2_headline[1] = find.text.strip()
             link_tag = find.find("a", href=True)
             if not link_tag:
                 print("FDA2: Could not find 'a' tag with href.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             article_url = link_tag['href']
             now = datetime.now().time()
@@ -1161,10 +1305,10 @@ def fda2():
                 webbrowser.open_new_tab(article_url)
                 winsound.Beep(2500, 200)
             fda2_headline[0] = fda2_headline[1]
-            time.sleep(2)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in fda2():", e)
-            time.sleep(2)
+            time.sleep(3.03)
 
 def bleepcomp():
     while True:
@@ -1174,7 +1318,7 @@ def bleepcomp():
             find = soup.find("item")
             if not find:
                 print("Bleeping Computer: Could not find 'item' tag.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             bleepcomp_headline[1] = find.title.text.strip()
             link = find.link.text.strip()
@@ -1185,10 +1329,10 @@ def bleepcomp():
                 webbrowser.open_new_tab(link)
                 winsound.Beep(2500, 200)
             bleepcomp_headline[0] = bleepcomp_headline[1]
-            time.sleep(2)
+            time.sleep(3.03)
         except Exception as e:
             print("Error in bleepcomp():", e)
-            time.sleep(2)
+            time.sleep(3.03)
 
 def hntrbrk():
     while True:
@@ -1198,7 +1342,7 @@ def hntrbrk():
             results = soup.find("item")
             if not results:
                 print("Hunterbrook: Could not find 'item' tag.")
-                time.sleep(2)
+                time.sleep(3.03)
                 continue
             hntrbrk_headline[1] = results.title.string.strip()
             link = results.link.string.strip()
@@ -1222,7 +1366,7 @@ def hntrbrk():
             import traceback
             print(f"Error in hntrbrk(): {e}")
             traceback.print_exc()
-            time.sleep(2)
+            time.sleep(3.03)
 lauren_balik_headline = ["", ""]
 
 # def lauren_balik():
@@ -1267,6 +1411,110 @@ lauren_balik_headline = ["", ""]
 #         except Exception as e:
 #             print("Error in lauren_balik():", e)
 #             time.sleep(5)
+ming_chi_kuo_headline = ["", ""]
+
+def ming_chi_kuo():
+    while True:
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0'
+            }
+            url = "https://medium.com/feed/@mingchikuo"
+            resp = requests.get(url, headers=headers)
+            if resp.status_code != 200:
+                print(f"Ming Chi Kuo: Received status code {resp.status_code}")
+                time.sleep(5)
+                continue
+            soup = BeautifulSoup(resp.content, 'xml')
+
+            # Find the latest item
+            item = soup.find('item')
+            if not item:
+                print("Ming Chi Kuo: Could not find 'item' tag.")
+                time.sleep(5)
+                continue
+
+            title_tag = item.find('title')
+            link_tag = item.find('link')
+            if not title_tag or not link_tag:
+                print("Ming Chi Kuo: Could not find 'title' or 'link' tag.")
+                time.sleep(5)
+                continue
+
+            title = title_tag.text.strip()
+            link = link_tag.text.strip()
+            ming_chi_kuo_headline[1] = title
+            now = datetime.now().time()
+            if ming_chi_kuo_headline[0] != ming_chi_kuo_headline[1]:
+                print(now, "\t", "Ming Chi Kuo", "\t", ming_chi_kuo_headline[1])
+                print("Article URL:", link)
+                webbrowser.open_new_tab(link)
+                winsound.Beep(2500, 200)
+            ming_chi_kuo_headline[0] = ming_chi_kuo_headline[1]
+            time.sleep(5)  # Check every 5 seconds
+        except Exception as e:
+            print("Error in ming_chi_kuo():", e)
+            time.sleep(3.52)
+mark_kleinman_headline = ["", ""]
+
+def mark_kleinman():
+    while True:
+        try:
+            url = "https://news.sky.com/author/mark-kleinman-494"
+            headers = {"User-Agent": "Mozilla/5.0"}
+            resp = requests.get(url, headers=headers)
+            if resp.status_code != 200:
+                print(f"Mark Kleinman: Received status code {resp.status_code}")
+                time.sleep(5)
+                continue
+
+            soup = BeautifulSoup(resp.content, 'html.parser')
+
+            # Find the first article tile
+            # Each article is under a div with class 'sdc-site-tiles__item sdc-site-tile...'
+            article = soup.find('div', class_='sdc-site-tiles__item')
+            if not article:
+                print("Mark Kleinman: Could not find article container.")
+                time.sleep(5)
+                continue
+
+            # Find the headline link
+            headline_tag = article.find('h3', class_='sdc-site-tile__headline')
+            if not headline_tag:
+                print("Mark Kleinman: Could not find headline tag.")
+                time.sleep(5)
+                continue
+
+            link_tag = headline_tag.find('a', class_='sdc-site-tile__headline-link', href=True)
+            if not link_tag:
+                print("Mark Kleinman: Could not find link tag in headline.")
+                time.sleep(5)
+                continue
+
+            title = link_tag.find('span', class_='sdc-site-tile__headline-text')
+            if not title:
+                print("Mark Kleinman: Could not find title span.")
+                time.sleep(5)
+                continue
+
+            article_title = title.get_text(strip=True)
+            article_url = link_tag['href']
+            if not article_url.startswith('http'):
+                article_url = "https://news.sky.com" + article_url
+
+            now = datetime.now().time()
+            mark_kleinman_headline[1] = article_title
+            if mark_kleinman_headline[0] != mark_kleinman_headline[1]:
+                print(now, "\t", "Mark Kleinman", "\t", mark_kleinman_headline[1])
+                print("Article URL:", article_url)
+                webbrowser.open_new_tab(article_url)
+                winsound.Beep(2500, 200)
+            mark_kleinman_headline[0] = mark_kleinman_headline[1]
+            time.sleep(5)
+
+        except Exception as e:
+            print("Error in mark_kleinman():", e)
+            time.sleep(3.01)
 
 # Start the threads
 # citron_thread = threading.Thread(target=citron)
@@ -1275,8 +1523,8 @@ lauren_balik_headline = ["", ""]
 scorpion_thread = threading.Thread(target=scorpion)
 scorpion_thread.start()
 
-iceberg_thread = threading.Thread(target=iceberg)
-iceberg_thread.start()
+# iceberg_thread = threading.Thread(target=iceberg)
+# iceberg_thread.start()
 
 hindenburg_thread = threading.Thread(target=hindenburg)
 hindenburg_thread.start()
@@ -1359,4 +1607,12 @@ capybara_thread.start()
 # lauren_balik_thread = threading.Thread(target=lauren_balik)
 # lauren_balik_thread.start()
 
+#
+# tiktok_thread = threading.Thread(target=tiktok_court, daemon=True)
+# tiktok_thread.start()
+#
+# ming_chi_kuo_thread = threading.Thread(target=ming_chi_kuo)
+# ming_chi_kuo_thread.start()
 
+mark_kleinman_thread = threading.Thread(target=mark_kleinman)
+mark_kleinman_thread.start()
