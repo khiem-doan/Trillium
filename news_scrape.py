@@ -4,8 +4,11 @@ from bs4 import BeautifulSoup
 import threading
 import webbrowser
 import winsound
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import random
+from curl_cffi import requests as curlreq
+from curl_cffi.requests.exceptions import Timeout as CurlTimeout, RequestException
+from urllib.parse import urljoin
 # Initialize headline tracking lists
 import sys, os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
@@ -3023,7 +3026,7 @@ def semiaccurate():
         except Exception as e:
             print("Error in semiaccurate():", e)
             traceback.print_exc()
-            time.sleep(random.uniform(3.5, 4.25))
+            time.sleep(random.uniform(3.85, 4.65))
 
 cnbc_seen = set()
 
@@ -3172,252 +3175,385 @@ def business_insider_tech():
 si_ma_seen   = set()
 si_corp_seen = set()
 
-def streetinsider_hot_ma():
-    import requests, random, time, webbrowser, traceback
-    from bs4 import BeautifulSoup
-    from datetime import datetime
-    from requests.adapters import HTTPAdapter, Retry
-    from urllib.parse import urljoin
-    from colorama import Fore, Back, Style
+def _build_si_session(http2=True, impersonate="chrome124"):
+    """
+    curl_cffi version-tolerant session constructor (same idea as axios).
+    Tries http2/h2, then falls back to no explicit H2 flag.
+    """
+    kwargs = dict(impersonate=impersonate)
+    s = None
+    can_toggle_h2 = False
 
-    BASE = "https://www.streetinsider.com/"
-    URL  = "https://www.streetinsider.com/Hot+M+and+A/"
-
-    # --- Replace your build_session() and streetinsider_feed() helpers with these ---
-
-    def _build_session():
-        import random, requests
-        from requests.adapters import HTTPAdapter, Retry
-        # try cloudscraper for CF/anti-bot
+    for attempt in ({"http2": http2}, {"h2": http2}, {}):
         try:
-            import cloudscraper
-            s = cloudscraper.create_scraper()
-        except Exception:
-            s = requests.Session()
+            s = curlreq.Session(**kwargs, **attempt)
+            can_toggle_h2 = bool(attempt)  # only True if a flag was accepted
+            break
+        except TypeError:
+            continue
+    if s is None:
+        s = curlreq.Session(**kwargs)
 
-        retry = Retry(
-            total=4,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["GET", "HEAD", "OPTIONS"]
-        )
-        adapter = HTTPAdapter(max_retries=retry, pool_connections=10, pool_maxsize=20)
-        s.mount("https://", adapter)
-        s.mount("http://", adapter)
+    s._can_toggle_h2 = can_toggle_h2
 
-        ua = random.choice(USER_AGENTS_DATA)["ua"]
-        # a more complete browser-like header set
-        s.headers.update({
-            "User-Agent": ua,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache",
-            "Connection": "keep-alive",
-            "Upgrade-Insecure-Requests": "1",
-            "Sec-Fetch-Dest": "document",
-            "Sec-Fetch-Mode": "navigate",
-            "Sec-Fetch-Site": "none",
-            "Sec-Fetch-User": "?1",
-        })
-        return s
+    s.headers.update({
+        "authority": "www.streetinsider.com",
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "accept-language": "en-US,en;q=0.9",
+        "accept-encoding": "gzip, deflate, br",
+        "upgrade-insecure-requests": "1",
+        "cache-control": "no-cache",
+        "pragma": "no-cache",
+        "referer": "https://www.streetinsider.com/",
+        "user-agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                       "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"),
+        # uncomment if you see long-lived stalls:
+        # "connection": "close",
+    })
+    # Warm cookies/consent best-effort
+    try:
+        s.get("https://www.streetinsider.com/", timeout=6)
+    except Exception:
+        pass
+    return s
 
-    def _fetch_with_fallback(session, url, timeout=12, referer="https://www.streetinsider.com/"):
-        """
-        Try direct fetch first. If 403, fall back to r.jina.ai mirror ONCE for that call.
-        Returns (bytes_html, used_proxy: bool). If both fail, raises HTTPError.
-        """
-        import requests
-        from urllib.parse import urlparse
+def _si_fetch(session, url, timeout=10, referer="https://www.streetinsider.com/"):
+    """
+    Direct fetch first; on 403 (or direct exception), try read-only mirror (r.jina.ai) once.
+    Returns (bytes, used_fallback: bool).
+    """
+    try:
+        r = session.get(url, timeout=timeout, headers={"Referer": referer})
+        if r.status_code == 200:
+            return r.content, False
+        if r.status_code not in (401, 402, 403):
+            r.raise_for_status()
+    except Exception:
+        # fall through to mirror
+        pass
 
-        # try direct
+    # 403 or direct failure -> r.jina.ai mirror
+    p = urlparse(url)
+    mirror = f"https://r.jina.ai/{p.scheme}://{p.netloc}{p.path}"
+    if p.query:
+        mirror += f"?{p.query}"
+    r2 = session.get(mirror, timeout=timeout)
+    r2.raise_for_status()
+    return r2.content, True
+
+def _streetinsider_core(page_url, feed_name, seen_set, sound_name="street insider",
+                        poll_range=(5.0, 7.0)):  # set to (3.0, 5.0) if you insist on super fast
+    """
+    Axios-like poller for a single SI page (Hot M&A or Hot Corp).
+    Handles recycle, timeouts, H2 flip, WAF cool-downs, parsing, sound, dedupe.
+    """
+    session = _build_si_session(http2=True)
+    use_http2 = True
+    last_recycle = datetime.utcnow()
+    req_count = 0
+    consec_fail = 0
+
+    while True:
         try:
-            r = session.get(url, timeout=timeout, headers={"Referer": referer})
-            if r.status_code == 200:
-                return r.content, False
-            if r.status_code != 403:
-                r.raise_for_status()
-        except requests.RequestException:
-            pass  # try fallback next
+            # recycle every N requests or after some time
+            if req_count >= 400 or (datetime.utcnow() - last_recycle) > timedelta(minutes=20):
+                session.close()
+                session = _build_si_session(http2=use_http2)
+                last_recycle = datetime.utcnow()
+                req_count = 0
 
-        # 403 or direct failed -> fallback to r.jina.ai
-        # r.jina.ai requires explicit http/https in path; use the original scheme/host/path
-        parsed = urlparse(url)
-        fallback = f"https://r.jina.ai/{parsed.scheme}://{parsed.netloc}{parsed.path}"
-        if parsed.query:
-            fallback += f"?{parsed.query}"
+            # quick request (single total timeout). retry once on CurlTimeout
+            try:
+                html, used_fallback = _si_fetch(session, page_url, timeout=8)
+            except CurlTimeout:
+                try:
+                    html, used_fallback = _si_fetch(session, page_url, timeout=8)
+                except CurlTimeout as e:
+                    raise  # to outer handler
 
-        r2 = session.get(fallback, timeout=timeout)
-        r2.raise_for_status()
-        return r2.content, True
+            # if direct fetch returned a WAF code we didn't catch, handle here
+            # (we only get here with bytes, or _si_fetch raised)
+            req_count += 1
+            consec_fail = 0
 
-    def streetinsider_feed(session, page_url, feed_name, seen_set, sound_name="street insider"):
-        import time, webbrowser
-        from bs4 import BeautifulSoup
-        from datetime import datetime
-        from urllib.parse import urljoin
+            soup = BeautifulSoup(html, "lxml")
+            # Same selector you used: StreetInsider list rows
+            items = soup.select("dl.news_list > dt")
 
-        try:
-            html, used_proxy = _fetch_with_fallback(session, page_url)
+            if not items:
+                # SI sometimes serves empty body when touchy -> brief cooldown
+                print(f"[{feed_name}] no items found; short sleep")
+                time.sleep(random.uniform(8, 12))
+            else:
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                for dt in items:
+                    a = dt.select_one("a.story_title")
+                    if not a:
+                        continue
+
+                    href = (a.get("href") or "").strip()
+                    classes = set(a.get("class") or [])
+
+                    # skip premium/blurred rows
+                    if "PremiumTip" in classes or "login.php" in href:
+                        continue
+
+                    if href.startswith("//"):
+                        link = "https:" + href
+                    elif href.startswith("http"):
+                        link = href
+                    else:
+                        link = urljoin("https://www.streetinsider.com/", href)
+
+                    title = a.get_text(strip=True)
+                    if not title or title in seen_set:
+                        continue
+                    seen_set.add(title)
+
+                    print(f"{now} {feed_name}\t{title}")
+                    print(f"Link: {link}")
+                    if used_fallback:
+                        print(f"[{feed_name}] served via mirror fallback")
+
+                    try:
+                        SOUNDS.play(sound_name, stop_current=True)
+                    except Exception:
+                        pass
+
+            # normal cadence
+            time.sleep(random.uniform(*poll_range))
+
+        except CurlTimeout as e:
+            print(f"[{feed_name}] Timeout; recycle fast:", e)
+            consec_fail += 1
+            session.close()
+            if consec_fail >= 3 and session._can_toggle_h2:
+                use_http2 = not use_http2  # flip h2 <-> h1.1 after repeated timeouts
+            session = _build_si_session(http2=use_http2)
+            last_recycle = datetime.utcnow()
+            req_count = 0
+            time.sleep(random.uniform(4, 7))
+
+        except RequestException as e:
+            # covers curl_cffi network errors
+            print(f"[{feed_name}] RequestException; soft backoff:", e)
+            consec_fail += 1
+            if consec_fail >= 2:
+                session.close()
+                session = _build_si_session(http2=use_http2)
+                last_recycle = datetime.utcnow()
+                req_count = 0
+            time.sleep(random.uniform(6, 10))
+
         except Exception as e:
-            print(f"{feed_name}: fetch error → {e}")
-            return
+            print(f"[{feed_name}] Error:", e)
+            traceback.print_exc()
+            consec_fail += 1
+            if consec_fail >= 2:
+                session.close()
+                session = _build_si_session(http2=use_http2)
+                last_recycle = datetime.utcnow()
+                req_count = 0
+            time.sleep(random.uniform(6, 10))
 
-        soup = BeautifulSoup(html, "lxml")
-        items = soup.select("dl.news_list > dt")
-        if not items:
-            print(f"{feed_name}: no items found")
-            return
+# ----------------- Thin wrappers for your two SI feeds -----------------
 
-        for dt in items:
-            a = dt.select_one("a.story_title")
-            if not a:
+def streetinsider_hot_ma(sound_name="street insider", poll_range=(4.0, 6.0)):
+    _streetinsider_core(
+        page_url="https://www.streetinsider.com/Hot+M+and+A/",
+        feed_name="SI Hot M&A",
+        seen_set=si_ma_seen,
+        sound_name=sound_name,
+        poll_range=poll_range,
+    )
+
+def streetinsider_hot_corp(sound_name="street insider", poll_range=(4.0, 6.0)):
+    _streetinsider_core(
+        page_url="https://www.streetinsider.com/Hot+Corp.+News",
+        feed_name="SI Hot Corp",
+        seen_set=si_corp_seen,
+        sound_name=sound_name,
+        poll_range=poll_range,
+    )
+# ======================================================================
+import threading
+
+si_ma_thread   = threading.Thread(target=streetinsider_hot_ma,   kwargs={"sound_name":"street insider", "poll_range":(4.0, 6.0)}, daemon=True)
+si_corp_thread = threading.Thread(target=streetinsider_hot_corp, kwargs={"sound_name":"street insider", "poll_range":(4.0, 6.0)}, daemon=True)
+
+si_ma_thread.start()
+si_corp_thread.start()
+# --- Add near your globals ---
+axios_seen = set()
+# pip install curl-cffi bs4 lxml
+from curl_cffi import requests as curlreq
+from curl_cffi.requests.exceptions import Timeout as CurlTimeout, RequestException
+from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
+import time, random, traceback
+
+axios_seen = set()
+def _build_axios_session(http2=True, impersonate="chrome124"):
+    """
+    Works across curl_cffi versions:
+    - old releases: support http2= (bool)
+    - 0.14.x: http2 kw no longer accepted by BaseSession; some builds use h2=
+    - fallback: no explicit H2 flag
+    """
+    kwargs = dict(impersonate=impersonate)
+    s = None
+    can_toggle_h2 = False
+
+    # Try newest/oldest possibilities in order
+    for attempt in ({"http2": http2}, {"h2": http2}, {}):
+        try:
+            s = curlreq.Session(**kwargs, **attempt)
+            # if we created it with a recognized H2 flag, we can toggle later
+            can_toggle_h2 = bool(attempt)
+            break
+        except TypeError:
+            continue
+
+    if s is None:
+        # last-resort constructor
+        s = curlreq.Session(**kwargs)
+
+    # mark capability for later toggling
+    s._can_toggle_h2 = can_toggle_h2
+
+    s.headers.update({
+        "authority": "www.axios.com",
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "accept-language": "en-US,en;q=0.9",
+        "accept-encoding": "gzip, deflate, br",
+        "upgrade-insecure-requests": "1",
+        "cache-control": "no-cache",
+        "pragma": "no-cache",
+        "referer": "https://www.axios.com/pro",
+        "user-agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                       "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"),
+        # If you still see long-lived socket stalls, uncomment to force short connections:
+        # "connection": "close",
+    })
+    try:
+        # warm cookies/consent; best-effort
+        s.get("https://www.axios.com/", timeout=6)
+    except Exception:
+        pass
+    return s
+
+def axios_all_deals(sound_name="axios", poll_range=(3.0, 5.0)):
+    """
+    Fast (3–5s) poller with self-healing against stalls/timeouts.
+    """
+    url = "https://www.axios.com/pro/all-deals"
+
+    session = _build_axios_session(http2=True)
+    use_http2 = True
+    last_recycle = datetime.utcnow()
+    req_count = 0
+    consec_fail = 0
+
+    while True:
+        try:
+            # ---- recycle policy: time-based or count-based
+            if req_count >= 400 or (datetime.utcnow() - last_recycle) > timedelta(minutes=20):
+                session.close()
+                session = _build_axios_session(http2=use_http2)
+                last_recycle = datetime.utcnow()
+                req_count = 0
+
+            # ---- do a quick request with short timeouts
+            # curl_cffi has a single timeout param = total; emulate quick retry ourselves
+            try:
+                resp = session.get(url, timeout=7)
+            except CurlTimeout:
+                # one fast retry on timeout
+                try:
+                    resp = session.get(url, timeout=7)
+                except CurlTimeout as e:
+                    raise  # bubble to outer except to trigger recycle/backoff
+
+            # handle WAF / rate-limit codes distinctly
+            if resp.status_code in (401, 402, 403, 429, 503):
+                print(f"[Axios] {resp.status_code} from edge. Cooldown.")
+                consec_fail += 1
+                # short cool down, then continue
+                time.sleep(random.uniform(12, 18))
                 continue
 
-            href = (a.get("href") or "").strip()
-            classes = set(a.get("class") or [])
+            resp.raise_for_status()
+            req_count += 1
+            consec_fail = 0
 
-            # skip premium (blurred) rows
-            if "PremiumTip" in classes or "login.php" in href:
-                continue
-
-            link = href
-            if link.startswith("//"):
-                link = "https:" + link
-            elif not link.startswith("http"):
-                link = urljoin("https://www.streetinsider.com/", link)
-
-            title = a.get_text(strip=True)
-            if not title:
-                continue
-
-            if title in seen_set:
-                continue
-            seen_set.add(title)
+            soup = BeautifulSoup(resp.content, "lxml")
+            anchors = soup.select('a[data-cy="story-summary-header"], a[data-cy="story-promo-headline"]')
 
             now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"{now} {feed_name}\t{title}")
-            print(f"Link: {link}")
-            if used_proxy:
-                print(f"{feed_name}: (served via proxy fallback)")
+            for a in anchors:
+                title = a.get_text(strip=True)
+                href = a.get("href") or ""
+                if href and not href.startswith("http"):
+                    href = "https://www.axios.com" + href
+                if not title or not href or title in axios_seen:
+                    continue
 
-            try:
-                webbrowser.open_new_tab(link)
-            except Exception:
-                pass
-            try:
-                SOUNDS.play(sound_name, stop_current=True)
-            except Exception:
+                axios_seen.add(title)
+                print(f"{now} Axios\t{title}")
+                print(f"Link: {href}")
                 try:
-                    import winsound;
-                    winsound.Beep(1200, 120)
+                    SOUNDS.play(sound_name, stop_current=True)
                 except Exception:
                     pass
 
-    session = build_session()
-    while True:
-        try:
-            streetinsider_feed(session, URL, "SI Hot M&A", si_ma_seen, sound_name="street insider")
-            # poll every ~3.5–4.25 minutes, like your other scrapers
-            time.sleep(random.uniform(3.5*60/60, 4.25*60/60))  # (keeping same seconds scale as your code)
+            # normal fast cadence
+            time.sleep(random.uniform(*poll_range))
+
+        except CurlTimeout as e:
+            # timeout after hours => likely stale h2 stream or dropped keep-alive
+            print("[Axios] Timeout; will recycle session quickly:", e)
+            consec_fail += 1
+            session.close()
+
+            # after a few consecutive timeouts, flip protocol to avoid h2 stalls
+            if consec_fail >= 3:
+                use_http2 = not use_http2  # toggle h2 <-> h1.1
+            session = _build_axios_session(http2=use_http2)
+            last_recycle = datetime.utcnow()
+            req_count = 0
+
+            # brief backoff but stay snappy
+            time.sleep(random.uniform(4, 7))
+
+        except RequestException as e:
+            # other curl_cffi errors
+            print("[Axios] RequestException; soft backoff:", e)
+            consec_fail += 1
+            if consec_fail >= 2:
+                # recycle on repeated generic failures
+                session.close()
+                session = _build_axios_session(http2=use_http2)
+                last_recycle = datetime.utcnow()
+                req_count = 0
+            time.sleep(random.uniform(6, 10))
+
         except Exception as e:
-            print("Error in streetinsider_hot_ma():", e)
+            # catch-all so your supervisor never dies
+            print("[Axios] Error in axios_all_deals():", e)
             traceback.print_exc()
-            time.sleep(random.uniform(3.5, 4.25))
+            consec_fail += 1
+            if consec_fail >= 2:
+                session.close()
+                session = _build_axios_session(http2=use_http2)
+                last_recycle = datetime.utcnow()
+                req_count = 0
+            time.sleep(random.uniform(6, 10))
 
 
-def streetinsider_hot_corp():
-    import requests, random, time, webbrowser, traceback
-    from bs4 import BeautifulSoup
-    from datetime import datetime
-    from requests.adapters import HTTPAdapter, Retry
-    from urllib.parse import urljoin
-    from colorama import Fore, Back, Style
 
-    BASE = "https://www.streetinsider.com/"
-    URL  = "https://www.streetinsider.com/Hot+Corp.+News"
+# somewhere in your startup:
+# session = make_shared_session_like_your_other_scrapers()
 
-    def build_session():
-        s = requests.Session()
-        retry = Retry(
-            total=4,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504],
-            allowed_methods=["GET", "HEAD", "OPTIONS"]
-        )
-        adapter = HTTPAdapter(max_retries=retry)
-        s.mount("https://", adapter)
-        s.mount("http://", adapter)
-        s.headers.update({
-            "User-Agent": random.choice(USER_AGENTS_DATA)["ua"],
-            "Accept-Language": "en-US,en;q=0.9",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Referer": BASE
-        })
-        return s
-
-    def streetinsider_feed(session, page_url, feed_name, seen_set, sound_name="street insider"):
-        resp = session.get(page_url, timeout=12)
-        resp.raise_for_status()
-        soup = BeautifulSoup(resp.content, "lxml")
-
-        items = soup.select("dl.news_list > dt")
-        if not items:
-            print(f"{feed_name}: no items found")
-            return
-
-        for dt in items:
-            a = dt.select_one("a.story_title")
-            if not a:
-                continue
-
-            classes = set(a.get("class") or [])
-            href = a.get("href", "").strip()
-
-            # skip premium/blurred rows
-            if "PremiumTip" in classes or "login.php" in href:
-                continue
-
-            link = href
-            if link.startswith("//"):
-                link = "https:" + link
-            elif not link.startswith("http"):
-                link = urljoin(BASE, link)
-
-            title = a.get_text(strip=True)
-            if not title:
-                continue
-
-            if title in seen_set:
-                continue
-            seen_set.add(title)
-
-            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            print(f"{now} {feed_name}\t{title}")
-            print(f"Link: {link}")
-
-            try:
-                webbrowser.open_new_tab(link)
-            except Exception:
-                pass
-            try:
-                SOUNDS.play(sound_name, stop_current=True)
-            except Exception:
-                try:
-                    import winsound
-                    winsound.Beep(1200, 120)
-                except Exception:
-                    pass
-
-    session = build_session()
-    while True:
-        try:
-            streetinsider_feed(session, URL, "SI Hot Corp", si_corp_seen, sound_name="street insider")
-            time.sleep(random.uniform(3.5, 4.25))  # every ~3.5–4.25 minutes
-        except Exception as e:
-            print("Error in streetinsider_hot_corp():", e)
-            traceback.print_exc()
-            time.sleep(random.uniform(3.5, 4.25))
 
 
 # Example: run each in its own thread (like your other scrapers)
@@ -3426,7 +3562,8 @@ import threading
 # # si_corp_thread = threading.Thread(target=streetinsider_hot_corp, daemon=True)
 # si_ma_thread.start()
 # si_corp_thread.start()
-
+axios_thread = threading.Thread(target=axios_all_deals, daemon=True)
+axios_thread.start()
 bi_thread = threading.Thread(target=business_insider_tech, daemon=True)
 bi_thread.start()
 # run in its own thread
@@ -3462,7 +3599,7 @@ nikkei_thread = threading.Thread(target=nikkei)
 statnews_thread = threading.Thread(target=statnews)
 # nypost_thread = threading.Thread(target=nypost)
 information_thread= threading.Thread(target=information)
-nikkei_thread.start()
+# nikkei_thread.start()
 statnews_thread.start()
 
 # yuyuan_thread = threading.Thread(target=yuyuan)

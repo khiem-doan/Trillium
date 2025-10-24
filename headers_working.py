@@ -7,10 +7,20 @@ import regex
 import winsound
 import threading
 import os
+import requests
+from bs4 import BeautifulSoup
+import threading
+import webbrowser
+import winsound
+from datetime import datetime
+import random
+from curl_cffi import requests as curlreq
+from curl_cffi.requests.exceptions import Timeout as CurlTimeout, RequestException
+from urllib.parse import urljoin
 import urllib3
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import time
 import webbrowser
 import colorama
@@ -631,97 +641,188 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 import requests
 from colorama import Style, Back, Fore
+# remembers only the latest (top) row so we alert once per change
+_mw_last = {"title": None, "url": None}
 
-# Ensure muddywaters_headline is defined globally or as needed
-muddywaters_headline = ["", ""]
+def _build_mw_session(http2=True, impersonate="chrome124"):
+    """
+    curl_cffi version-tolerant session constructor (same idea as your SI/axios).
+    Tries http2/h2, then falls back to no explicit H2 flag.
+    """
+    kwargs = dict(impersonate=impersonate)
+    s = None
+    can_toggle_h2 = False
 
-def muddywaters():
-    # Assumes muddywaters_headline is defined as a global list: [previous, current]
-    session = requests.Session()
-    request_count = 0
-    max_requests_per_session = 6
-    session.headers.update({'User-Agent': random.choice(USER_AGENTS_DATA)['ua']})
+    for attempt in ({"http2": http2}, {"h2": http2}, {}):
+        try:
+            s = curlreq.Session(**kwargs, **attempt)
+            can_toggle_h2 = bool(attempt)
+            break
+        except TypeError:
+            continue
+    if s is None:
+        s = curlreq.Session(**kwargs)
+
+    s._can_toggle_h2 = can_toggle_h2
+    s.headers.update({
+        "authority": "muddywatersresearch.com",
+        "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "accept-language": "en-US,en;q=0.9",
+        "accept-encoding": "gzip, deflate, br",
+        "upgrade-insecure-requests": "1",
+        "cache-control": "no-cache",
+        "pragma": "no-cache",
+        "referer": "https://muddywatersresearch.com/",
+        "user-agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                       "(KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"),
+        # "connection": "close",  # uncomment if you see long-lived stalls
+    })
+    # warm cookies/consent best-effort
+    try:
+        s.get("https://muddywatersresearch.com/", timeout=6)
+    except Exception:
+        pass
+    return s
+
+def _extract_ticker_from_title(title: str) -> str | None:
+    """
+    From text in parentheses, take the FIRST token; stop at space or dot.
+    Examples:
+      (APP US)   -> APP
+      (ERF.FP)   -> ERF
+      (FFH:CN)   -> FFH:CN
+      (NYSE: TAL US) -> NYSE:   (first token is NYSE:, which is what your rule implies)
+    """
+    m = re.search(r"\(([^)]+)\)", title)
+    if not m:
+        return None
+    inner = m.group(1).strip()
+    token = re.split(r"[ .]", inner, maxsplit=1)[0]
+    token = re.sub(r"[^A-Za-z0-9:]+$", "", token)  # trim trailing non-alnum/colon
+    return token.upper() if token else None
+
+def muddywaters_watch(sound_name="muddy waters", poll_range=(3.6, 5.2)):
+    base_url = "https://muddywatersresearch.com"
+    url = f"{base_url}/research/"
+
+    session = _build_mw_session(http2=True)
+    use_http2 = True
+    last_recycle = datetime.now(timezone.utc)
+    req_count = 0
+    consec_fail = 0
 
     while True:
         try:
-            if request_count >= max_requests_per_session:
+            # recycle periodically
+            if req_count >= 400 or (datetime.now(timezone.utc) - last_recycle) > timedelta(minutes=20):
                 session.close()
-                session = requests.Session()
-                session.headers.update({'User-Agent': random.choice(USER_AGENTS_DATA)['ua']})
-                request_count = 0
+                session = _build_mw_session(http2=use_http2)
+                last_recycle = datetime.now(timezone.utc)
+                req_count = 0
 
-            # Request the main homepage instead of the /research/ page
-            resp = session.get("https://muddywatersresearch.com/", timeout=16)
-            if resp.status_code != 200:
-                print(f"MuddyWaters: Received status code {resp.status_code}")
-                time.sleep(random.uniform(3.86, 5.65))
+            # request with one quick retry on timeout
+            try:
+                resp = session.get(url, timeout=8)
+            except CurlTimeout:
+                resp = session.get(url, timeout=8)
+
+            # edge/WAF cooldowns
+            if resp.status_code in (401, 402, 403, 429, 503):
+                time.sleep(random.uniform(12, 18))
                 continue
 
-            soup = BeautifulSoup(resp.content, 'html.parser')
-            # Find the container holding the reports; in the provided HTML it is the div with class "content-items"
-            container = soup.find('div', class_='content-items')
-            if not container:
-                print("MuddyWaters: Could not find the 'content-items' container.")
-                time.sleep(random.uniform(3.86, 5.65))
+            resp.raise_for_status()
+            req_count += 1
+            consec_fail = 0
+
+            soup = BeautifulSoup(resp.content, "lxml")
+            # grab ONLY the top (most recent) row in the table
+            top = soup.select_one("#research-table tbody tr")
+            if not top:
+                time.sleep(random.uniform(8, 12))
                 continue
 
-            # Get the first article element from the container
-            article = container.find('article')
-            if not article:
-                print("MuddyWaters: Could not find any article element in the container.")
-                time.sleep(random.uniform(3.86, 5.65))
+            a = top.select_one("td.first a[href]")
+            if not a:
+                time.sleep(random.uniform(*poll_range))
                 continue
 
-            # Within the article, find the header's link with the report title
-            header = article.find('header', class_='content-item__header')
-            if not header:
-                print("MuddyWaters: Could not find the header in the article.")
-                time.sleep(random.uniform(3.86, 5.65))
-                continue
+            title = a.get_text(strip=True)
+            href = a.get("href") or ""
+            link = href if href.startswith("http") else urljoin(base_url, href)
 
-            a_tag = header.find('a', class_='content-item__title-link', href=True)
-            if not a_tag:
-                print("MuddyWaters: Could not find the title link in the header.")
-                time.sleep(random.uniform(3.86, 5.65))
-                continue
+            # Alert ONLY when top row changes
+            if title and title != _mw_last["title"]:
+                _mw_last["title"] = title
+                _mw_last["url"] = link
 
-            # The full URL is expected to be provided in the href attribute (if not, you might need to prepend the domain)
-            article_url = a_tag['href']
-            muddywaters_headline[1] = a_tag.get_text(strip=True)
-            now = datetime.now().time()
-
-            if muddywaters_headline[0] != muddywaters_headline[1]:
-                ticker = None
-                # Use a regex to find text within parentheses
-                match = re.search(r'\(([^)]+)\)', muddywaters_headline[1])
-                if match:
-                    # Split the extracted text by space and take the first part
-                    ticker = match.group(1).strip().split()[0].upper()
-
+                ticker = _extract_ticker_from_title(title)
                 if ticker:
-                    formatted = f"{Style.BRIGHT}{Back.YELLOW}{Fore.BLACK}{ticker}{Style.RESET_ALL}"
-                    print(formatted)
-                    print(formatted)
-                    print(formatted)
+                    try:
+                        from colorama import Fore, Back, Style
+                        formatted = f"{Style.BRIGHT}{Back.YELLOW}{Fore.BLACK}{ticker}{Style.RESET_ALL}"
+                        print(formatted); print(formatted); print(formatted)
+                    except Exception:
+                        print(ticker); print(ticker); print(ticker)
                 else:
-                    print(f"MuddyWaters: Could not extract ticker from headline '{muddywaters_headline[1]}'.")
+                    print(f"MuddyWaters: Could not extract ticker from headline '{title}'.")
 
-                print(now, "\t", "MuddyWaters", "\t", muddywaters_headline[1])
-                print("Article URL:", article_url)
-                webbrowser.open_new_tab(article_url)
-                winsound.Beep(1500, 100)
+                now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                print(f"{now}\tMuddyWaters\t{title}")
+                print("Article URL:", link)
 
-            muddywaters_headline[0] = muddywaters_headline[1]
-            time.sleep(random.uniform(3.86, 5.65))
-            request_count += 1
+                try:
+                    webbrowser.open_new_tab(link)
+                except Exception:
+                    pass
+                try:
+                    SOUNDS.play(sound_name, stop_current=True)
+                except Exception:
+                    try:
+                        import winsound
+                        winsound.Beep(1500, 100)
+                    except Exception:
+                        pass
 
-        except Exception as e:
-            print("Error in muddywaters():", e)
-            time.sleep(random.uniform(3.86, 5.65))
+            time.sleep(random.uniform(*poll_range))
 
-    session.close()  # This line is unreachable due to the infinite loop
+        except CurlTimeout as e:
+            consec_fail += 1
+            session.close()
+            if consec_fail >= 3 and getattr(session, "_can_toggle_h2", False):
+                use_http2 = not use_http2
+            session = _build_mw_session(http2=use_http2)
+            last_recycle = datetime.now(timezone.utc)
+            req_count = 0
+            time.sleep(random.uniform(4, 7))
 
+        except RequestException as e:
+            consec_fail += 1
+            if consec_fail >= 2:
+                session.close()
+                session = _build_mw_session(http2=use_http2)
+                last_recycle = datetime.now(timezone.utc)
+                req_count = 0
+            time.sleep(random.uniform(6, 10))
 
+        except Exception:
+            traceback.print_exc()
+            consec_fail += 1
+            if consec_fail >= 2:
+                session.close()
+                session = _build_mw_session(http2=use_http2)
+                last_recycle = datetime.now(timezone.utc)
+                req_count = 0
+            time.sleep(random.uniform(6, 10))
+
+# ----------------- Thread wrapper (run concurrently with SI, Axios, etc.) -----------------
+
+muddywaters_thread = threading.Thread(
+    target=muddywaters_watch,
+    kwargs={"sound_name": "muddy waters", "poll_range": (3.6, 5.2)},
+    daemon=True,
+)
+muddywaters_thread.start()
 
 # 5. Added Grizzly Research Function
 import random
