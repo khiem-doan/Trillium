@@ -2257,8 +2257,8 @@ def sec8k():
                         ticker_formatted = f"{Style.BRIGHT}{Fore.WHITE}{ticker}{Style.RESET_ALL}"
                         company_name_colored = company_name
 
-                    # --- Section 8l: Construct and print output ---
-                    # (everything up through URL stays the same)
+                    # --- Section 8l: Construct and print output (REPLACEMENT) ---
+                    # Build the output string
                     output = (
                         f"=== TICKER: {ticker_formatted} - {form_type_extracted} - Item {items_text} ===\n"
                         f"Company: {company_name_colored}\n"
@@ -2269,54 +2269,43 @@ def sec8k():
                         f"URL: {doc_url}\n"
                     )
 
-                    # --- NEW: Words section begin ---
-                    # find which filter_keywords actually appear in the filing text
+                    # Append matched keywords (colored)
                     matched = [kw for kw in filter_keywords if keyword_in_text(text_lower, kw)]
-                    highlighted = []
-                    for kw in matched:
-                        if any(keyword_in_text(kw.lower(), red_kw) for red_kw in red_keywords):
-                            highlighted.append(f"{Back.RED}{kw}{Style.RESET_ALL}")
-                        elif any(keyword_in_text(kw.lower(), green_kw) for green_kw in green_keywords):
-                            highlighted.append(f"{Back.GREEN}{kw}{Style.RESET_ALL}")
-                        elif any(keyword_in_text(kw.lower(), orange_kw) for orange_kw in orange_keywords):
-                            highlighted.append(f"{Back.YELLOW}{kw}{Style.RESET_ALL}")
-                        else:
-                            highlighted.append(kw)
-                    if highlighted:
+                    if matched:
+                        highlighted = []
+                        for kw in matched:
+                            if any(keyword_in_text(kw.lower(), rk) for rk in red_keywords):
+                                highlighted.append(f"{Back.RED}{kw}{Style.RESET_ALL}")
+                            elif any(keyword_in_text(kw.lower(), gk) for gk in green_keywords):
+                                highlighted.append(f"{Back.GREEN}{kw}{Style.RESET_ALL}")
+                            elif any(keyword_in_text(kw.lower(), ok) for ok in orange_keywords):
+                                highlighted.append(f"{Back.YELLOW}{kw}{Style.RESET_ALL}")
+                            else:
+                                highlighted.append(kw)
                         output += "Words: " + ", ".join(highlighted) + "\n"
-                    # --- NEW: Words section end ---
 
-                    # finalize coloring and print exactly as before
-                    output = Style.BRIGHT + output + Style.RESET_ALL
-                    if orange_found:
-                        print(f"{Back.YELLOW + Fore.BLACK}{output}")
-                    elif red_found:
-                        print(f"{Back.RED + Fore.BLACK}{output}")
-                    elif green_found:
-                        print(f"{Back.GREEN + Fore.BLACK}{output}")
-                    else:
-                        print(output)
-                        # >>> PLAY THE FORM-SPECIFIC SOUND HERE <<<
+                    # Choose a single prefix color (if any), then print ONCE
+                    prefix = ""
+                    if any(keyword_in_text(text_lower, kw) for kw in orange_keywords):
+                        prefix = Back.YELLOW + Fore.BLACK
+                    elif any(keyword_in_text(text_lower, kw) for kw in red_keywords):
+                        prefix = Back.RED + Fore.BLACK
+                    elif any(keyword_in_text(text_lower, kw) for kw in green_keywords):
+                        prefix = Back.GREEN + Fore.BLACK
+
+                    print(prefix + Style.BRIGHT + output + Style.RESET_ALL)
+
+                    # Play the correct filing sound ONCE
                     play_form_sound(form_type_extracted or form_type)
 
-                    webbrowser.open_new_tab(doc_url)
+                    # Open the document tab ONCE
                     try:
-                        import winsound
-                        # winsound.Beep(1500, 100)
-                    except ImportError:
-                        pass
-                    webbrowser.open_new_tab(doc_url)
-                    try:
-                        import winsound
-                        # winsound.Beep(1500, 100)
-                    except ImportError:
+                        webbrowser.open_new_tab(doc_url)
+                    except Exception:
                         pass
 
                     opened_links.add(top_link)
                     last_processed_time = max(last_processed_time, updated_datetime)
-                else:
-                    last_processed_time = max(last_processed_time, updated_datetime)
-                    continue
 
             # --- Section 8m: Pause and increment request counter ---
             time.sleep(1)

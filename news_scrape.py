@@ -3381,8 +3381,8 @@ import threading
 si_ma_thread   = threading.Thread(target=streetinsider_hot_ma,   kwargs={"sound_name":"street insider", "poll_range":(4.0, 6.0)}, daemon=True)
 si_corp_thread = threading.Thread(target=streetinsider_hot_corp, kwargs={"sound_name":"street insider", "poll_range":(4.0, 6.0)}, daemon=True)
 
-si_ma_thread.start()
-si_corp_thread.start()
+# si_ma_thread.start()
+# si_corp_thread.start()
 # --- Add near your globals ---
 axios_seen = set()
 # pip install curl-cffi bs4 lxml
