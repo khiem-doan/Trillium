@@ -20,7 +20,8 @@ TO RUN THE CODE
   -For example, if white house is giving an error, comment out this: whitehouse_thread = threading.Thread(target=whitehouse_news) whitehouse_thread.start()
     - For my non coders put a hashtag in front of both of those lines
   - Then set the time.sleep at least a second greater for that whole code block
-  - Only run the code again after a day or so for best results. But possibly wait more.    
+  - Only run the code again after a day or so for best results. But possibly wait more.
+- In general on errors: The time frames I have are good to not get banned. If you see one off error messages once every few hours or so it's fine. But multiple errors in a row and you're in danger of being blocked. So some websites give me occassional errors that I ignore because it's fine, but be prudent for multiple. 
 
 
 --------------------------------------------------------------------------------------------------------------
