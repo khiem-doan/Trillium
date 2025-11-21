@@ -6,7 +6,7 @@ Good morning freeloaders. If you're seeing this you've been graced by the GOAT K
 IMPORTANT
 - news_scrape is the news scraper (duh)
 
--headers working is my short report scraper + my SEC scraper. 
+- headers working is my short report scraper + my SEC scraper. 
 
 TO RUN THE CODE
 -run supervisor.py which should run headers + news scrape 
