@@ -18,7 +18,7 @@ TO RUN THE CODE
 --------------------------------------------------------------------------------------------------------------
 
 GENERAL
-- On news scrape, you can run semafor_rohan but make sure that the time delay is not less than 3-4 seconds, I got blocked
+- On news scrape, you can run semafor_rohan but make sure that the time delay is not less than 3-4 seconds, I got blocked. Rohan Goswami is the only thing about Semafor that matters so far. 
 - you can uncomment any of the threads to run them, just make sure you don't get blocked. I don't run some of them, but most should work.
 - I believe I currently don't run culper and a few others, but try to un comment them and have fun. Will they work? Probably, idk, but if you start getting blocked, set the time.sleep for the whole function at least 1 second greater, don't run the code for a day or more, then try again. 
 
