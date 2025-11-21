@@ -72,5 +72,7 @@ USER_AGENTS_DATA = [
 Fantastic. 
 
 Go to ChatGPT (or Gemini, idgaf) and ask AI to change this group of UAs to all different ones. Make it randomized and different.
-Essentially we don't want to all be running the same user agents because it will detect that our browsers are all using the same stuff and increases ban likelihood. So change it up and copy your new list in. 
+Essentially we don't want to all be running the same user agents because it will detect that our browsers are all using the same stuff and increases ban likelihood. So change it up and copy your new list in. I recommend having at least as many UAs as I have because essentially the sites view each as a different browser, so the chance we get banned is much lower. 
+
+If you're interested look up user agent cycling, but if you're on this doc you have no interest in coding whatsoever, so probably not happening.
 
