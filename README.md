@@ -3,6 +3,8 @@ Good morning freeloaders. If you're seeing this you've been graced by the GOAT K
 
 I am very sure the code works because it has worked for me and at least two other people. So that's nice. 
 
+Also if the script works and you run it correctly it is gonna open a fuck ton of tabs. Be prepared to just exit chrome quick, but this is right. 
+
 --------------------------------------------------------------------------------------------------------------
 IMPORTANT
 - news_scrape is the news scraper (duh)
