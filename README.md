@@ -1,4 +1,4 @@
-Notes
+
 Good morning freeloaders. If you're seeing this you've been graced by the GOAT Khiem. Read the important first, then the general if you're wondering why certain functions aren't running or don't understand anything about the code. 
 
 
