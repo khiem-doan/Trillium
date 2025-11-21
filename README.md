@@ -16,6 +16,11 @@ TO RUN THE CODE
 - In order to do so, you will have to download a lot of packages on Pycharm Community version. Install all of those (the list is literally on the top of headers, news scrape, and supervisor, so do that. If you fail to do this step it won't run, and you failed the IQ test. 
 - if you want to run news scrape and headers at the same time, just run the supervisor script. That puts all the output into one big code output
   - But if you want to have separate code output for both, run headers, then run news scrape. It's your choice, but I find running supervisor saves me space
+- If you ever see an error, STOP running the code immediately, comment out the specific thread that is running the error
+  -For example, if white house is giving an error, comment out this: whitehouse_thread = threading.Thread(target=whitehouse_news) whitehouse_thread.start()
+    - For my non coders put a hashtag in front of both of those lines
+  - Then set the time.sleep at least a second greater for that whole code block
+  - Only run the code again after a day or so for best results. But possibly wait more.    
 
 
 --------------------------------------------------------------------------------------------------------------
