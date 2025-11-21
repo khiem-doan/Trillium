@@ -9,8 +9,8 @@ IMPORTANT
 - headers working is my short report scraper + my SEC scraper. 
 
 TO RUN THE CODE
--run supervisor.py which should run headers + news scrape 
--In order to do so, you will have to download a lot of packages on Pycharm Community version. Install all of those (the list is literally on the top of headers, news scrape, and supervisor, so do that. If you fail to do this step it won't run, and you failed the really basic IQ test. 
+- run supervisor.py which should run headers + news scrape 
+- In order to do so, you will have to download a lot of packages on Pycharm Community version. Install all of those (the list is literally on the top of headers, news scrape, and supervisor, so do that. If you fail to do this step it won't run, and you failed the IQ test. 
 - if you want to run news scrape and headers at the same time, just run the supervisor script. That puts all the output into one big code output
 - But if you want to have separate code output for both, run headers, then run news scrape. It's your choice, but I find running supervisor saves me space
 - The sound alerts I downloaded manually. For you they will probably just be beeps. Download and save the sounds through Balbakoa and save them under the same name I have them as if you want them to work specifically - for example, for SEC 8ks, saying the word "SEC" instead of just beeping. 
