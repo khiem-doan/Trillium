@@ -12,7 +12,7 @@ IMPORTANT
 - headers working is my short report scraper + my SEC scraper. 
 
 TO RUN THE CODE
-- Download PyCharm Community Version ( the free one that says community, not the paid one that says paid. yes, someone has asked me this).
+- Download PyCharm Community Version ( the free one that says community, not the Pro one that says paid. Yes, someone has asked me this).
 - run supervisor.py which should run headers + news scrape 
 - In order to do so, you will have to download a lot of packages on Pycharm Community version. Install all of those (the list is literally on the top of headers, news scrape, and supervisor, so do that. If you fail to do this step it won't run, and you failed the IQ test. 
 - if you want to run news scrape and headers at the same time, just run the supervisor script. That puts all the output into one big code output
