@@ -2,6 +2,7 @@
 Good morning freeloaders. If you're seeing this you've been graced by the GOAT Khiem. Read the important first, then the general if you're wondering why certain functions aren't running or don't understand anything about the code. 
 
 I am very sure the code works because it has worked for me and at least two other people. So that's nice. 
+
 --------------------------------------------------------------------------------------------------------------
 IMPORTANT
 - news_scrape is the news scraper (duh)
